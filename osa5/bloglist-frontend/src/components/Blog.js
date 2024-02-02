@@ -1,56 +1,59 @@
-import { useState } from 'react'
-import blogService from '../services/blogs'
+import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 
-const Blog = ({ blog, updater, addLikes, currentUser }) => {
-  const [showDetails, setShowDetailsMore] = useState(false)
+const Blog = (props) => {
+  const blog = props.blog
+  const [visible, setVisible] = useState(false)
+  const visibilityToggle = { display: visible ? '' : 'none' }
 
-  const toggleDetails = () => {
-    setShowDetailsMore(!showDetails)
+  const toggleVisibility = () => {
+    setVisible(!visible)
   }
 
-  const addLikesToBLog = (event) => {
-    event.preventDefault()
-    addLikes(blog)
+  const upvote = () => {
+    const updatedBlog = ({
+      ...blog,
+      likes: blog.likes + 1
+    })
+    props.updateBlog(updatedBlog)
   }
 
-  const deleteBlog = (event) => {
-    event.preventDefault()
-    if (window.confirm(`Remove blog '${blog.title}' by ${blog.author}?`)){
-      blogService.deleteBlog(blog)
-        .then(() => {
-          updater()
-        })
-        .catch(error => {
-          console.log(error)
-        })
-    }
+  const remove = () => {
+    props.removeBlog(blog)
   }
 
-  if (!showDetails){
-    return (
-      <div className='blog'>
-        {blog.title} by {blog.author} {blog.user.name}
-        <button onClick={toggleDetails} data-testid='details-button'>View details</button>
+  const blogStyle = {
+    paddingTop: 10,
+    paddingLeft: 2,
+    border: 'solid',
+    borderWidth: 1,
+    marginBottom: 5
+  }
+
+  return (
+    <div style={blogStyle}>
+      <div>
+        {blog.title} {blog.author} <button onClick={toggleVisibility}>{visible ? 'hide' : 'view'}</button>
       </div>
-    )} else {
-    return (
-      <div className='blog'>
-      Title: {blog.title}  <button onClick={toggleDetails}>Hide details</button><br/>
-      Author: {blog.author}<br/>
-      Url: {blog.url}<br/>
-      Likes: {blog.likes} <button onClick={addLikesToBLog} data-testid='like-button'>Like</button><br/>
-      Added by: {blog.user.name}
-        {currentUser.id === blog.user.id && <button onClick={deleteBlog}>Remove</button>}
-
+      <div style={visibilityToggle}>
+        <p>{blog.url}</p>
+        <p>likes {blog.likes} <button onClick={upvote}>like</button> </p>
+        {blog.user &&
+          <p>{blog.user.username}</p>
+        }
+        {blog.user.name === props.user.name && (
+          <button id="delete-btn" onClick={remove}>
+              delete
+          </button>
+        )}
       </div>
-    )
-  }}
+    </div>
+  )}
 
 Blog.propTypes = {
   blog: PropTypes.object.isRequired,
-  updater: PropTypes.func.isRequired,
-  currentUser: PropTypes.object.isRequired
+  updateBlog: PropTypes.func.isRequired,
+  removeBlog: PropTypes.func.isRequired
 }
 
 export default Blog

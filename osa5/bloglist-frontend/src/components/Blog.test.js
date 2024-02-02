@@ -1,37 +1,63 @@
-import React from 'react';
-import '@testing-library/jest-dom/extend-expect';
-import { render, screen, fireEvent } from '@testing-library/react';
-import Blog from './Blog';
+import React from 'react'
+import Blog from './Blog'
+import userEvent from '@testing-library/user-event'
+import { render, screen } from '@testing-library/react'
+import '@testing-library/jest-dom/extend-expect'
 
-const blog = {
-  title: 'Component testing is done with react-testing-library',
-  author: 'Authoripants',
-  url: 'http://www.blog.blog',
-  user: { name: 'nimi' }
-};
+describe('Blog component tests', () => {
+  const tempUser = {
+    username: 'username',
+    name: 'name',
+  }
 
-describe('Rendering blogs', () => {
-  test('renders content', () => {
-    render(<Blog blog={blog} />);
-    expect(screen.getByText(blog.title)).toBeDefined();
-    expect(screen.getByText(blog.author)).toBeDefined();
-  });
+  const blog = {
+    title:'Test',
+    author:'TestAuthor',
+    url:'test.test',
+    likes: 42,
+    user: {
+      username: 'username',
+      name: 'name',
+    }
+  }
+  const user = userEvent.setup()
 
-  test('does not render URL or likes by default', () => {
-    render(<Blog blog={blog} />);
-    expect(screen.queryByText(blog.url)).toBeNull();
-    // Assuming 'likes' is part of the component's display
-    expect(screen.queryByText('likes')).toBeNull();
-  });
+  let mockUpdateBlog = jest.fn()
+  let mockRemoveBlog = jest.fn()
 
-  test('renders URL and likes when view button is clicked', () => {
-    render(<Blog blog={blog} />);
-    const button = screen.getByText('view');
-    fireEvent.click(button);
-    expect(screen.getByText(blog.url)).toBeDefined();
-    // Check for likes display
-  });
+  let component
 
-  // Additional tests...
-});
+  beforeEach(() => {
+    component = render(
+      <Blog blog={blog} updateBlog={mockUpdateBlog} removeBlog={mockRemoveBlog} user={tempUser}/>
+    )
+  })
 
+  test('renders only title and author', () => {
+    const element = screen.getByText(`${blog.title} ${blog.author}`)
+    expect(element).toBeDefined()
+  })
+
+  test('clicking the view button displays rest of information', async () => {
+    const button = screen.getByText('view')
+    await user.click(button)
+
+    expect(component.container).toHaveTextContent(
+      `${blog.url}`
+    )
+
+    expect(component.container).toHaveTextContent(
+      `${blog.likes}`
+    )
+  })
+
+  test('clicking the like button twice', async () => {
+    const button = screen.getByText('view')
+    await user.click(button)
+    const likeButton = screen.getByText('like')
+    await user.click(likeButton)
+    await user.click(likeButton)
+
+    expect(mockUpdateBlog.mock.calls).toHaveLength(2)
+  })
+})
